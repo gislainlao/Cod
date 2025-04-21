@@ -214,3 +214,131 @@ Private Sub importer_2023()
 
     MsgBox listeFichiers.Count & " fichiers traités et listés avec succès.", vbInformation
 End Sub
+
+
+
+
+
+
+
+
+
+'##################################################################
+' Importation des données de 2023 avec structure tab((k,l),(i,j))
+'##################################################################
+
+Private Sub importer_2023()
+    Dim dossier As String
+    Dim listeFichiers As Collection
+    Dim fichier As Variant
+    Dim ws As Worksheet
+    Dim wb As Workbook
+    Dim sh As Worksheet
+    Dim i As Long, j As Long
+    Dim chemin As String
+    Dim elements() As String
+    Dim produit As String
+    Dim reseau_dist As String
+    Dim nomFichier As String
+    Dim tabFinal As Object ' Dictionnaire pour stocker tab((k,l),(i,j))
+    Dim keyKL As String
+    Dim rng As Range
+    Dim rowCount As Long, colCount As Long
+    
+    ' Initialiser le dictionnaire pour stocker les données
+    Set tabFinal = CreateObject("Scripting.Dictionary")
+    
+    ' Choisir un dossier
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .Title = "Sélectionnez le dossier contenant les fichiers Excel"
+        If .Show <> -1 Then Exit Sub
+        dossier = .SelectedItems(1)
+    End With
+    
+    ' Liste des fichiers Excel
+    Set listeFichiers = New Collection
+    Call ParcourirDossier(dossier, listeFichiers)
+    
+    ' Parcourir chaque fichier
+    For Each fichier In listeFichiers
+        chemin = fichier
+        elements = Split(chemin, "\")
+        
+        nomFichier = elements(UBound(elements)) ' Nom du fichier
+        produit = elements(UBound(elements) - 1) ' Nom du dossier produit
+        reseau_dist = elements(UBound(elements) - 2) ' Nom du dossier réseau
+        
+        ' Créer une clé unique pour (k,l)
+        keyKL = reseau_dist & "_" & produit
+        
+        ' Ouvrir le fichier Excel
+        Set wb = Workbooks.Open(chemin)
+        Set sh = wb.Sheets(1) ' Première feuille (ajustez si nécessaire)
+        
+        ' Trouver la plage de données
+        Set rng = sh.UsedRange
+        rowCount = rng.Rows.Count
+        colCount = rng.Columns.Count
+        
+        ' Initialiser un tableau pour les données (i,j) de ce fichier
+        Dim dataIJ() As Variant
+        ReDim dataIJ(1 To rowCount, 1 To colCount)
+        
+        ' Lire les données cellule par cellule
+        For i = 1 To rowCount
+            For j = 1 To colCount
+                dataIJ(i, j) = sh.Cells(i, j).Value
+            Next j
+        Next i
+        
+        ' Stocker les données dans le dictionnaire
+        tabFinal(keyKL) = dataIJ
+        
+        ' Fermer le fichier
+        wb.Close SaveChanges:=False
+    Next
+    
+    ' (Optionnel) Afficher un résumé dans une nouvelle feuille
+    Set ws = ThisWorkbook.Sheets.Add
+    ws.Name = "Résumé Importation"
+    
+    ws.Cells(1, 1).Value = "Réseau"
+    ws.Cells(1, 2).Value = "Produit"
+    ws.Cells(1, 3).Value = "Lignes"
+    ws.Cells(1, 4).Value = "Colonnes"
+    
+    i = 2
+    For Each keyKL In tabFinal.Keys
+        elements = Split(keyKL, "_")
+        ws.Cells(i, 1).Value = elements(0) ' Réseau
+        ws.Cells(i, 2).Value = elements(1) ' Produit
+        ws.Cells(i, 3).Value = UBound(tabFinal(keyKL), 1) ' Nombre de lignes
+        ws.Cells(i, 4).Value = UBound(tabFinal(keyKL), 2) ' Nombre de colonnes
+        i = i + 1
+    Next
+    
+    MsgBox listeFichiers.Count & " fichiers traités et importés avec succès.", vbInformation
+End Sub
+
+' Fonction pour parcourir les fichiers Excel dans un dossier et sous-dossiers
+Private Sub ParcourirDossier(ByVal dossier As String, ByRef listeFichiers As Collection)
+    Dim fso As Object
+    Dim dossierObj As Object
+    Dim fichierObj As Object
+    Dim sousDossierObj As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set dossierObj = fso.GetFolder(dossier)
+    
+    ' Ajouter les fichiers Excel du dossier courant
+    For Each fichierObj In dossierObj.Files
+        If LCase(fso.GetExtensionName(fichierObj.Name)) = "xlsx" Or LCase(fso.GetExtensionName(fichierObj.Name)) = "xls" Then
+            listeFichiers.Add fichierObj.Path
+        End If
+    Next
+    
+    ' Parcourir les sous-dossiers
+    For Each sousDossierObj In dossierObj.SubFolders
+        ParcourirDossier sousDossierObj.Path, listeFichiers
+    Next
+End Sub
