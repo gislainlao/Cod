@@ -1,0 +1,45 @@
+Private Sub importer_Click()
+    Dim dossier As String
+    Dim listeFichiers As Collection
+    Dim fichier As Variant
+    
+    ' Choisir un dossier
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .Title = "Sélectionnez le dossier contenant les fichiers Excel"
+        If .Show <> -1 Then Exit Sub
+        dossier = .SelectedItems(1)
+    End With
+
+    ' Récupérer tous les fichiers Excel dans le dossier et sous-dossiers
+    Set listeFichiers = New Collection
+    Call ParcourirDossier(dossier, listeFichiers)
+
+    ' Ajouter les fichiers à la liste
+    liste_fichiers.Clear ' Facultatif : vider la liste avant ajout
+    For Each fichier In listeFichiers
+        liste_fichiers.AddItem fichier
+    Next
+
+    ' Afficher le nombre de fichiers
+    Nombre.Caption = liste_fichiers.ListCount & " Fichiers"
+End Sub
+
+
+
+Private Sub ParcourirDossier(ByVal chemin As String, ByRef fichiers As Collection)
+    Dim fso As Object, dossier As Object, sousDossier As Object, fichier As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set dossier = fso.GetFolder(chemin)
+
+    ' Ajouter les fichiers Excel
+    For Each fichier In dossier.Files
+        If LCase(fso.GetExtensionName(fichier.Name)) = "xlsx" Then
+            fichiers.Add fichier.Path
+        End If
+    Next
+ 
+    ' Parcourir les sous-dossiers
+    For Each sousDossier In dossier.SubFolders
+        Call ParcourirDossier(sousDossier.Path, fichiers)
+    Next
+End Sub
