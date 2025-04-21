@@ -2,6 +2,8 @@ Private Sub importer_Click()
     Dim dossier As String
     Dim listeFichiers As Collection
     Dim fichier As Variant
+    Dim tabFinal() As Variant
+    Dim i As Long
     
     ' Choisir un dossier
     With Application.FileDialog(msoFileDialogFolderPicker)
@@ -10,20 +12,47 @@ Private Sub importer_Click()
         dossier = .SelectedItems(1)
     End With
 
-    ' Récupérer tous les fichiers Excel dans le dossier et sous-dossiers
+    ' Liste des fichiers Excel
     Set listeFichiers = New Collection
     Call ParcourirDossier(dossier, listeFichiers)
 
-    ' Ajouter les fichiers à la liste
-    liste_fichiers.Clear ' Facultatif : vider la liste avant ajout
+    ' Préparer tableau résultat à 3 colonnes
+    ReDim tabFinal(1 To listeFichiers.Count, 1 To 3)
+
+    i = 1
+    Dim chemin As String
+    Dim elements() As String
+    Dim produit As String
+    Dim reseau_dist As String
+    Dim nomFichier As String
+
     For Each fichier In listeFichiers
-        liste_fichiers.AddItem fichier
+        chemin = fichier
+        elements = Split(chemin, "\")
+        
+        nomFichier = elements(UBound(elements)) ' nom du fichier
+        produit = elements(UBound(elements) - 1) ' nom du dossier qui contient le fichier
+        reseau_dist = elements(UBound(elements) - 2) ' dossier au-dessus (grand-parent)
+
+        tabFinal(i, 1) = reseau_dist
+        tabFinal(i, 2) = produit
+        tabFinal(i, 3) = nomFichier
+        i = i + 1
     Next
 
-    ' Afficher le nombre de fichiers
-    Nombre.Caption = liste_fichiers.ListCount & " Fichiers"
-End Sub
+    ' (Optionnel) Afficher dans une nouvelle feuille Excel
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets.Add
+    ws.Name = "Fichiers importés"
 
+    ws.Cells(1, 1).Value = "Réseau_dist"
+    ws.Cells(1, 2).Value = "Produit"
+    ws.Cells(1, 3).Value = "Fichier"
+
+    ws.Range("A2").Resize(UBound(tabFinal), 3).Value = tabFinal
+
+    MsgBox listeFichiers.Count & " fichiers traités et listés avec succès.", vbInformation
+End Sub
 
 
 Private Sub ParcourirDossier(ByVal chemin As String, ByRef fichiers As Collection)
@@ -31,14 +60,12 @@ Private Sub ParcourirDossier(ByVal chemin As String, ByRef fichiers As Collectio
     Set fso = CreateObject("Scripting.FileSystemObject")
     Set dossier = fso.GetFolder(chemin)
 
-    ' Ajouter les fichiers Excel
     For Each fichier In dossier.Files
         If LCase(fso.GetExtensionName(fichier.Name)) = "xlsx" Then
             fichiers.Add fichier.Path
         End If
     Next
- 
-    ' Parcourir les sous-dossiers
+
     For Each sousDossier In dossier.SubFolders
         Call ParcourirDossier(sousDossier.Path, fichiers)
     Next
