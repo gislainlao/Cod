@@ -70,3 +70,243 @@ Private Sub ParcourirDossier(ByVal chemin As String, ByRef fichiers As Collectio
         Call ParcourirDossier(sousDossier.Path, fichiers)
     Next
 End Sub
+
+
+
+
+
+Public che1 As String
+Public che2 As String
+Public che3 As String
+Public fic_tri As String
+Public tab1() As Variant
+Public tab2() As Variant
+Public annee As Integer
+
+Sub AjoutDiag(prod, fic_tri, format)
+
+  Application.DisplayAlerts = False
+
+  Dim tab1() As Variant
+  Dim tab2() As Variant
+  
+    ThisWorkbook.Activate
+      
+    che1 = Range("histo").Value
+    che2 = Range("an_obs").Value
+    che3 = Range("fic_save").Value
+    
+  annee = Range("AnObs").Value
+  
+  nb_an = annee - 1984 + 1
+
+ ' copie du triangle de l'année passée dans le tableau tab1
+    Workbooks.Open Filename:=Range("histo").Value & "\" & prod & "\" & fic_tri & format & ".xlsx"  'triangle histo
+    Windows(fic_tri & format & ".xlsx").Activate
+    Range("C2").Resize(nb_an - 1, nb_an - 1).Select
+    tab1 = Selection.Value
+    Workbooks(fic_tri & format & ".xlsx").Close
+
+ ' copie du triangle de l'année d'observation dans le tableau tab2
+  Workbooks.Open Filename:=Range("an_obs").Value & "\" & Range("res").Value & "\" & prod & "\" & fic_tri & format & ".xlsx" 'triangle an_obs
+    Windows(fic_tri & format & ".xlsx").Activate
+    Range("C2").Resize(nb_an, nb_an).Select
+    tab2 = Selection.Value
+
+  ' concaténation des tableaux
+  If format = "POL" Then
+        For i = 1 To nb_an - 1
+            For j = 1 To nb_an - i
+                tab2(i, j) = tab1(i, j)
+            Next j
+        Next i
+  End If
+  If format = "CAL" Then
+        For i = 1 To nb_an - 1
+            For j = 1 To nb_an - 1
+                tab2(i, j) = tab1(i, j)
+            Next j
+        Next i
+  End If
+    
+  Windows(fic_tri & format & ".xlsx").Activate
+  Range("C2").Resize(nb_an, nb_an).Select
+  Selection.Value = tab2
+
+ActiveWorkbook.SaveAs Filename:= _
+    che3 & "\" & prod & "\" & fic_tri & format & ".xlsx"
+Windows(fic_tri & format & ".xlsx").Close
+
+End Sub
+  
+
+Sub Histo(prod)
+
+Application.DisplayAlerts = False
+
+ThisWorkbook.Activate
+   
+'Call AjoutDiag(prod, "TX_CA_VI_UC_", "POL")
+'Call AjoutDiag(prod, "VI_MOY_", "POL")
+'Call AjoutDiag(prod, "CA_VI_", "POL")
+'Call AjoutDiag(prod, "NBVC_", "POL")
+'Call AjoutDiag(prod, "TX_VC_", "POL")
+'Call AjoutDiag(prod, "VC_MOY_", "POL")
+'Call AjoutDiag(prod, "CA_VC_", "POL")
+'Call AjoutDiag(prod, "TX_CA_VC_UC_", "POL")
+'Call AjoutDiag(prod, "NBVLP_", "POL")
+'Call AjoutDiag(prod, "TX_VLP_", "POL")
+'Call AjoutDiag(prod, "VLP_MOY_", "POL")
+'Call AjoutDiag(prod, "CA_VLP_", "POL")
+'Call AjoutDiag(prod, "TX_CA_VLP_UC_", "POL")
+'Call AjoutDiag(prod, "NBPP_", "POL")
+'Call AjoutDiag(prod, "TX_PP_", "POL")
+'Call AjoutDiag(prod, "PP_MOY_", "POL")
+'Call AjoutDiag(prod, "CA_PP_", "POL")
+'Call AjoutDiag(prod, "TX_CA_PP_UC_", "POL")
+'Call AjoutDiag(prod, "TX_CHG_VI_", "POL")
+'Call AjoutDiag(prod, "TX_CHG_VC_", "POL")
+'Call AjoutDiag(prod, "TX_CHG_VLP_", "POL")
+'Call AjoutDiag(prod, "TX_CHG_PP_", "POL")
+'Call AjoutDiag(prod, "TX_CHG_", "POL")
+'Call AjoutDiag(prod, "COMM_VL_", "POL")
+'Call AjoutDiag(prod, "COMM_VI_", "POL")
+'Call AjoutDiag(prod, "COMM_PP_", "POL")
+'Call AjoutDiag(prod, "COMM_VLP_", "POL")
+'Call AjoutDiag(prod, "TX_COMM_VL_", "POL")
+'Call AjoutDiag(prod, "TX_COMM_VI_", "POL")
+'Call AjoutDiag(prod, "TX_COMM_PP_", "POL")
+'Call AjoutDiag(prod, "TX_COMM_VLP_", "POL")
+'Call AjoutDiag(prod, "TX_COMM_", "POL")
+
+
+'Call AjoutDiag(prod, "TX_CA_VI_UC_", "CAL")
+'Call AjoutDiag(prod, "VI_MOY_", "CAL")
+'Call AjoutDiag(prod, "CA_VI_", "CAL")
+'Call AjoutDiag(prod, "NBVC_", "CAL")
+'Call AjoutDiag(prod, "TX_VC_", "CAL")
+'Call AjoutDiag(prod, "VC_MOY_", "CAL")
+'Call AjoutDiag(prod, "CA_VC_", "CAL")
+'Call AjoutDiag(prod, "TX_CA_VC_UC_", "CAL")
+'Call AjoutDiag(prod, "NBVLP_", "CAL")
+'Call AjoutDiag(prod, "TX_VLP_", "CAL")
+'Call AjoutDiag(prod, "VLP_MOY_", "CAL")
+'Call AjoutDiag(prod, "CA_VLP_", "CAL")
+'Call AjoutDiag(prod, "TX_CA_VLP_UC_", "CAL")
+'Call AjoutDiag(prod, "NBPP_", "CAL")
+'Call AjoutDiag(prod, "TX_PP_", "CAL")
+'Call AjoutDiag(prod, "PP_MOY_", "CAL")
+'Call AjoutDiag(prod, "CA_PP_", "CAL")
+'Call AjoutDiag(prod, "TX_CA_PP_UC_", "CAL")
+'Call AjoutDiag(prod, "TX_CHG_VI_", "CAL")
+'Call AjoutDiag(prod, "TX_CHG_VC_", "CAL")
+'Call AjoutDiag(prod, "TX_CHG_VLP_", "CAL")
+'Call AjoutDiag(prod, "TX_CHG_PP_", "CAL")
+'Call AjoutDiag(prod, "TX_CHG_", "CAL")
+'Call AjoutDiag(prod, "COMM_VL_", "CAL")
+'Call AjoutDiag(prod, "COMM_VI_", "CAL")
+'Call AjoutDiag(prod, "COMM_PP_", "CAL")
+'Call AjoutDiag(prod, "COMM_VLP_", "CAL")
+'Call AjoutDiag(prod, "TX_COMM_VL_", "CAL")
+'Call AjoutDiag(prod, "TX_COMM_VI_", "CAL")
+'Call AjoutDiag(prod, "TX_COMM_PP_", "CAL")
+'Call AjoutDiag(prod, "TX_COMM_VLP_", "CAL")
+'Call AjoutDiag(prod, "TX_COMM_", "CAL")
+   
+   
+   
+   
+   
+   
+'ajout 22/06/19 (copié depuis le Module3 VBA)
+Call AjoutDiag(prod, "TX_RT_NB_", "POL")
+Call AjoutDiag(prod, "TX_RT_MT_", "POL")
+Call AjoutDiag(prod, "TX_RP_MT_", "POL")
+Call AjoutDiag(prod, "TX_RP_NB_", "POL")
+Call AjoutDiag(prod, "NBRP_", "POL")
+Call AjoutDiag(prod, "NBRT_", "POL")
+Call AjoutDiag(prod, "RP_MOY_", "POL")
+Call AjoutDiag(prod, "RT_", "POL")
+Call AjoutDiag(prod, "RT_MOY_", "POL")
+Call AjoutDiag(prod, "RP_", "POL")
+Call AjoutDiag(prod, "PMOUV_", "POL")
+Call AjoutDiag(prod, "PMCOMPLET_", "POL")
+'Call AjoutDiag(prod, "NBCTR_", "POL")
+'Call AjoutDiag(prod, "MINMAXANEFFET", "POL")
+'fin de l'ajout
+Application.DisplayAlerts = True
+
+End Sub
+
+
+
+Sub histoTri()
+
+    ThisWorkbook.Activate
+    
+    If Range("res").Value = "A2P" Then
+        i = 3
+    ElseIf Range("res").Value = "AGENTS" Then
+        i = 18
+    ElseIf Range("res").Value = "OCEANIC_SAXO" Then
+        i = 55
+    ElseIf Range("res").Value = "PMO" Then
+        i = 71
+    ElseIf Range("res").Value = "PP" Then
+        i = 83
+    ElseIf Range("res").Value = "PUVL" Then
+        i = 91
+    Else
+        MsgBox ("Le nom de reseau est incorrect")
+    End If
+    
+    
+    Do While Cells(i, 3) <> ""
+    
+        Cells(i, 3).Select
+        Selection.Copy
+        Range("prod").Select
+        ActiveSheet.Paste
+
+        Call Histo(Range("prod").Value)
+        Call AJOUT_MinMax(Range("prod").Value, "MINMAXANEFFET", "")
+        i = i + 1
+        
+    Loop
+    
+End Sub
+
+
+
+Sub AJOUT_MinMax(prod, fic_tri, format)
+
+Application.DisplayAlerts = False
+  Dim tab1() As Variant
+  Dim tab2() As Variant
+  
+    ThisWorkbook.Activate
+      
+    che2 = Range("an_obs").Value
+    che3 = Range("fic_save").Value
+    
+  annee = Range("AnObs").Value
+  
+  nb_an = annee - 1984 + 1
+
+
+ ' copie du fichier Min Max du dossier stat
+ 
+    Workbooks.Open Filename:=Range("an_obs").Value & "\" & Range("res").Value & "\" & prod & "\" & fic_tri & format & ".xlsx" 'triangle an_obs
+    Windows(fic_tri & format & ".xlsx").Activate
+    Range("C2").Resize(nb_an, nb_an).Select
+    tab2 = Selection.Value
+
+    Windows(fic_tri & format & ".xlsx").Activate
+    Range("C2").Resize(nb_an, nb_an).Select
+    Selection.Value = tab2
+
+ActiveWorkbook.SaveAs Filename:= _
+    che3 & "\" & prod & "\" & fic_tri & format & ".xlsx"
+Windows(fic_tri & format & ".xlsx").Close
+
+End Sub
