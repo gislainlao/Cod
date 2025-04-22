@@ -357,3 +357,38 @@ Private Sub ParcourirDossier(ByVal dossier As String, ByRef listeFichiers As Col
         ParcourirDossier sousDossierObj.Path, listeFichiers
     Next
 End Sub
+
+Sub CalculDesDeciles()
+    Dim tab(1 To 5, 1 To 4) As Double
+    Dim temp() As Double
+    Dim i As Long, j As Long, k As Long
+    Dim n As Long
+    Dim D1 As Double, D9 As Double
+
+    ' Remplir le tableau 2D avec des données fictives (valeurs entre 0 et 100)
+    For i = 1 To 5
+        For j = 1 To 4
+            tab(i, j) = Rnd() * 100
+        Next j
+    Next i
+
+    ' Convertir en tableau 1D pour l’analyse
+    n = (UBound(tab, 1) - LBound(tab, 1) + 1) * (UBound(tab, 2) - LBound(tab, 2) + 1)
+    ReDim temp(1 To n)
+
+    k = 1
+    For i = LBound(tab, 1) To UBound(tab, 1)
+        For j = LBound(tab, 2) To UBound(tab, 2)
+            temp(k) = tab(i, j)
+            k = k + 1
+        Next j
+    Next i
+
+    ' Calcul des déciles
+    D1 = Application.WorksheetFunction.Percentile_Inc(temp, 0.1) ' 1er décile = 10%
+    D9 = Application.WorksheetFunction.Percentile_Inc(temp, 0.9) ' 9e décile = 90%
+
+    MsgBox "1er décile (D1) : " & Format(D1, "0.00") & vbCrLf & _
+           "9e décile (D9) : " & Format(D9, "0.00")
+End Sub
+
