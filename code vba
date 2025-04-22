@@ -1,238 +1,42 @@
-Private Sub importer_Click()
+
+Dim ligne_debut As Integer: Dim colonne_debut As Integer
+Dim ligne_fin As Integer: Dim colonne_fin As Integer
+
+
+
+Private Sub UserForm_Initialize()
+Call warn
+End Sub
+
+
+Private Sub warn()
+Me.Label1.BackColor = RGB(44, 104, 105)
+Me.Frame1.BackColor = RGB(44, 104, 105)
+End Sub
+
+
+Private Sub FERMER_Click()
+formulaire.Hide
+End Sub
+
+
+
+Private Sub SUPRIMER_Click()
+liste_fichiers.RemoveItem (liste_fichiers.ListIndex)
+Nombre.Caption = liste_fichiers.ListCount & " " & "Fichiers"
+End Sub
+
+'##################################################################'
+' Importation des données de l'année N-1 fichiers Excel            '
+'##################################################################'
+Private Sub Stat_N1_Click()
+
     Dim dossier As String
     Dim listeFichiers As Collection
     Dim fichier As Variant
-    Dim tabFinal() As Variant
-    Dim i As Long
-    
-    ' Choisir un dossier
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "Sélectionnez le dossier contenant les fichiers Excel"
-        If .Show <> -1 Then Exit Sub
-        dossier = .SelectedItems(1)
-    End With
-
-    ' Liste des fichiers Excel
-    Set listeFichiers = New Collection
-    Call ParcourirDossier(dossier, listeFichiers)
-
-    ' Préparer tableau résultat à 3 colonnes
-    ReDim tabFinal(1 To listeFichiers.Count, 1 To 3)
-
-    i = 1
-    Dim chemin As String
-    Dim elements() As String
-    Dim produit As String
-    Dim reseau_dist As String
-    Dim nomFichier As String
-
-    For Each fichier In listeFichiers
-        chemin = fichier
-        elements = Split(chemin, "\")
-        
-        nomFichier = elements(UBound(elements)) ' nom du fichier
-        produit = elements(UBound(elements) - 1) ' nom du dossier qui contient le fichier
-        reseau_dist = elements(UBound(elements) - 2) ' dossier au-dessus (grand-parent)
-
-        tabFinal(i, 1) = reseau_dist
-        tabFinal(i, 2) = produit
-        tabFinal(i, 3) = nomFichier
-        i = i + 1
-    Next
-
-    ' (Optionnel) Afficher dans une nouvelle feuille Excel
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets.Add
-    ws.Name = "Fichiers importés"
-
-    ws.Cells(1, 1).Value = "Réseau_dist"
-    ws.Cells(1, 2).Value = "Produit"
-    ws.Cells(1, 3).Value = "Fichier"
-
-    ws.Range("A2").Resize(UBound(tabFinal), 3).Value = tabFinal
-
-    MsgBox listeFichiers.Count & " fichiers traités et listés avec succès.", vbInformation
-End Sub
-
-
-Private Sub ParcourirDossier(ByVal chemin As String, ByRef fichiers As Collection)
-    Dim fso As Object, dossier As Object, sousDossier As Object, fichier As Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set dossier = fso.GetFolder(chemin)
-
-    For Each fichier In dossier.Files
-        If LCase(fso.GetExtensionName(fichier.Name)) = "xlsx" Then
-            fichiers.Add fichier.Path
-        End If
-    Next
-
-    For Each sousDossier In dossier.SubFolders
-        Call ParcourirDossier(sousDossier.Path, fichiers)
-    Next
-End Sub
-
-
-
-
-'##################################Importation des données de 2024###################################################
-'####################################################################################################################
-'####################################################################################################################
-
-Private Sub importer_2024()
-    Dim dossier As String
-    Dim listeFichiers As Collection
-    Dim fichier As Variant
-    Dim tabFinal() As Variant
-    Dim i As Long
-    
-    ' Choisir un dossier
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "Sélectionnez le dossier contenant les fichiers Excel"
-        If .Show <> -1 Then Exit Sub
-        dossier = .SelectedItems(1)
-    End With
-
-    ' Liste des fichiers Excel
-    Set listeFichiers = New Collection
-    Call ParcourirDossier(dossier, listeFichiers)
-
-    ' Préparer tableau résultat à 3 colonnes
-    ReDim tabFinal(1 To listeFichiers.Count, 1 To 3)
-
-    i = 1
-    Dim chemin As String
-    Dim elements() As String
-    Dim produit As String
-    Dim reseau_dist As String
-    Dim nomFichier As String
-
-    For Each fichier In listeFichiers
-        chemin = fichier
-        elements = Split(chemin, "\")
-        
-        nomFichier = elements(UBound(elements)) ' nom du fichier
-        produit = elements(UBound(elements) - 1) ' nom du dossier qui contient le fichier
-        reseau_dist = elements(UBound(elements) - 2) ' dossier au-dessus (grand-parent)
-
-        tabFinal(i, 1) = reseau_dist
-        tabFinal(i, 2) = produit
-        tabFinal(i, 3) = nomFichier
-        i = i + 1
-    Next
-
-    ' (Optionnel) Afficher dans une nouvelle feuille Excel
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets.Add
-    ws.Name = "Fichiers importés"
-
-    ws.Cells(1, 1).Value = "Réseau_dist"
-    ws.Cells(1, 2).Value = "Produit"
-    ws.Cells(1, 3).Value = "Fichier"
-
-    ws.Range("A2").Resize(UBound(tabFinal), 3).Value = tabFinal
-
-    MsgBox listeFichiers.Count & " fichiers traités et listés avec succès.", vbInformation
-End Sub
-
-
-Private Sub ParcourirDossier(ByVal chemin As String, ByRef fichiers As Collection)
-    Dim fso As Object, dossier As Object, sousDossier As Object, fichier As Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set dossier = fso.GetFolder(chemin)
-
-    For Each fichier In dossier.Files
-        If LCase(fso.GetExtensionName(fichier.Name)) = "xlsx" Then
-            fichiers.Add fichier.Path
-        End If
-    Next
-
-    For Each sousDossier In dossier.SubFolders
-        Call ParcourirDossier(sousDossier.Path, fichiers)
-    Next
-End Sub
-
-
-
-'##################################Importation des données de 2023###################################################
-'####################################################################################################################
-'####################################################################################################################
-
-
-
-Private Sub importer_2023()
-    Dim dossier As String
-    Dim listeFichiers As Collection
-    Dim fichier As Variant
-    Dim tabFinal() As Variant
-    Dim i As Long
-    
-    ' Choisir un dossier
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "Sélectionnez le dossier contenant les fichiers Excel"
-        If .Show <> -1 Then Exit Sub
-        dossier = .SelectedItems(1)
-    End With
-
-    ' Liste des fichiers Excel
-    Set listeFichiers = New Collection
-    Call ParcourirDossier(dossier, listeFichiers)
-
-    ' Préparer tableau résultat à 3 colonnes
-    ReDim tabFinal(1 To listeFichiers.Count, 1 To 3)
-
-    i = 1
-    Dim chemin As String
-    Dim elements() As String
-    Dim produit As String
-    Dim reseau_dist As String
-    Dim nomFichier As String
-
-    For Each fichier In listeFichiers
-        chemin = fichier
-        elements = Split(chemin, "\")
-        
-        nomFichier = elements(UBound(elements)) ' nom du fichier
-        produit = elements(UBound(elements) - 1) ' nom du dossier qui contient le fichier
-        reseau_dist = elements(UBound(elements) - 2) ' dossier au-dessus (grand-parent)
-
-        tabFinal(i, 1) = reseau_dist
-        tabFinal(i, 2) = produit
-        tabFinal(i, 3) = nomFichier
-        i = i + 1
-    Next
-
-    ' (Optionnel) Afficher dans une nouvelle feuille Excel
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets.Add
-    ws.Name = "Fichiers importés"
-
-    ws.Cells(1, 1).Value = "Réseau_dist"
-    ws.Cells(1, 2).Value = "Produit"
-    ws.Cells(1, 3).Value = "Fichier"
-
-    ws.Range("A2").Resize(UBound(tabFinal), 3).Value = tabFinal
-
-    MsgBox listeFichiers.Count & " fichiers traités et listés avec succès.", vbInformation
-End Sub
-
-
-
-
-
-
-
-
-'##################################################################
-' Importation rapide des données de 2023 pour plus de 1000 fichiers
-'##################################################################
-
-Private Sub importer_2023()
-    Dim dossier As String
-    Dim listeFichiers As Collection
-    Dim fichier As Variant
-    Dim tabFinal As Object ' Dictionnaire pour tab((k,l),(i,j))
+    Dim tabFinal As Object
     Dim keyKL As String
-    Dim xlApp As Object ' Application Excel
+    Dim xlApp As Object
     Dim wb As Object ' Classeur
     Dim ws As Object ' Feuille
     Dim i As Long, j As Long
@@ -242,13 +46,14 @@ Private Sub importer_2023()
     Dim produit As String
     Dim reseau_dist As String
     Dim startTime As Double
-    
+    Dim tab_Key1() As String
+    Dim t As Long
     ' Mesurer le temps d'exécution
     startTime = Timer
     
     ' Initialiser le dictionnaire
     Set tabFinal = CreateObject("Scripting.Dictionary")
-    
+
     ' Choisir un dossier
     With Application.FileDialog(msoFileDialogFolderPicker)
         .Title = "Sélectionnez le dossier contenant les fichiers Excel"
@@ -261,8 +66,9 @@ Private Sub importer_2023()
     Call ParcourirDossier(dossier, listeFichiers)
     
     ' Initialiser l'application Excel
-    Set xlApp = Application ' Utiliser l'instance actuelle d'Excel
+    Set xlApp = Application
     
+    ReDim tab_Key1(1 To listeFichiers.Count)
     ' Parcourir chaque fichier
     For Each fichier In listeFichiers
         chemin = fichier
@@ -274,7 +80,8 @@ Private Sub importer_2023()
         
         ' Clé unique pour (k,l)
         keyKL = reseau_dist & "_" & produit
-        
+        t = t + 1
+        tab_Key1(t) = keyKL
         ' Ouvrir le fichier Excel
         On Error Resume Next
         Set wb = xlApp.Workbooks.Open(chemin, ReadOnly:=True)
@@ -285,7 +92,10 @@ Private Sub importer_2023()
         On Error GoTo 0
         
         ' Accéder à la première feuille (ajustez si nécessaire)
-        Set ws = wb.Sheets(1) ' Ou spécifiez le nom : wb.Sheets("Sheet1")
+        'Set ws = wb.Sheets(1) ' Ou spécifiez le nom : wb.Sheets("Sheet1")
+        For Each ws In wb.Sheets
+            If ws.UsedRange.Cells.Count > 0 Then Exit For 'prendre la première feuille non vide
+        Next
         
         ' Obtenir les dimensions
         rowCount = ws.UsedRange.Rows.Count
@@ -307,31 +117,111 @@ Private Sub importer_2023()
         
         ' Fermer le classeur
         wb.Close SaveChanges:=False
+NextFile:
+    Next
+    ' Afficher le temps d'exécution
+    If t > 0 Then MsgBox tab_Key1(150)
+    nb_fichier_N1 = listeFichiers.Count
+    MsgBox listeFichiers.Count & " fichiers traités en " & Round(Timer - startTime, 2) & " secondes.", vbInformation
+    MsgBox (tabFinal("A2P_CIM")(1, 1))
+End Sub
+
+'##################################################################'
+' Importation des données de l'année N-2 fichiers Excel            '
+'##################################################################'
+
+Private Sub STAT_N2_Click()
+    Dim dossier As String
+    Dim listeFichiers As Collection
+    Dim fichier As Variant
+    Dim tabFinal2 As Object
+    Dim keyKL2 As String
+    Dim xlApp As Object
+    Dim wb As Object ' Classeur
+    Dim ws As Object ' Feuille
+    Dim i As Long, j As Long
+    Dim rowCount As Long, colCount As Long
+    Dim chemin As String
+    Dim elements() As String
+    Dim produit As String
+    Dim reseau_dist As String
+    Dim startTime As Double
+    Dim tab_Key2() As String
+    Dim t As Long
+    ' Mesurer le temps d'exécution
+    startTime = Timer
+    
+    ' Initialiser le dictionnaire
+    Set tabFinal2 = CreateObject("Scripting.Dictionary")
+    
+    ' Choisir un dossier
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .Title = "Sélectionnez le dossier contenant les fichiers Excel"
+        If .Show <> -1 Then Exit Sub
+        dossier = .SelectedItems(1)
+    End With
+    
+    ' Liste des fichiers Excel
+    Set listeFichiers = New Collection
+    Call ParcourirDossier(dossier, listeFichiers)
+    
+    ' Initialiser l'application Excel
+    Set xlApp = Application
+    ReDim tab_Key2(1 To listeFichiers.Count)
+    ' Parcourir chaque fichier
+    For Each fichier In listeFichiers
+        chemin = fichier
+        elements = Split(chemin, "\")
+        
+        ' Extraire réseau et produit
+        produit = elements(UBound(elements) - 1) ' Dossier produit
+        reseau_dist = elements(UBound(elements) - 2) ' Dossier réseau
+        
+        ' Clé unique pour (k,l)
+        keyKL2 = reseau_dist & "_" & produit
+        t = t + 1
+        tab_Key2(t) = keyKL2
+        ' Ouvrir le fichier Excel
+        On Error Resume Next
+        Set wb = xlApp.Workbooks.Open(chemin, ReadOnly:=True)
+        If wb Is Nothing Then
+            MsgBox "Impossible d'ouvrir le fichier : " & chemin, vbCritical
+            GoTo NextFile
+        End If
+        On Error GoTo 0
+        
+        ' Accéder à la première feuille (ajustez si nécessaire)
+        'Set ws = wb.Sheets(1) ' Ou spécifiez le nom : wb.Sheets("Sheet1")
+        For Each ws In wb.Sheets
+            If ws.UsedRange.Cells.Count > 0 Then Exit For 'prendre la première feuille non vide
+        Next
+        
+    
+        ' Obtenir les dimensions
+        rowCount = ws.UsedRange.Rows.Count
+        colCount = ws.UsedRange.Columns.Count
+        
+        ' Initialiser le tableau pour les données (i,j)
+        Dim dataIJ() As Variant
+        ReDim dataIJ(1 To rowCount, 1 To colCount)
+        
+        ' Lire les données
+        For i = 1 To rowCount
+            For j = 1 To colCount
+                dataIJ(i, j) = ws.Cells(i, j).Value
+            Next j
+        Next i
+        
+        tabFinal2(keyKL2) = dataIJ
+        
+        ' Fermer le classeur
+        wb.Close SaveChanges:=False
         
 NextFile:
     Next
-    
-    ' (Optionnel) Afficher un résumé dans une feuille
-    Dim wsSummary As Worksheet
-    Set wsSummary = ThisWorkbook.Sheets.Add
-    wsSummary.Name = "Résumé Importation"
-    
-    wsSummary.Cells(1, 1).Value = "Réseau"
-    wsSummary.Cells(1, 2).Value = "Produit"
-    wsSummary.Cells(1, 3).Value = "Lignes"
-    wsSummary.Cells(1, 4).Value = "Colonnes"
-    
-    i = 2
-    For Each keyKL In tabFinal.Keys
-        elements = Split(keyKL, "_")
-        wsSummary.Cells(i, 1).Value = elements(0) ' Réseau
-        wsSummary.Cells(i, 2).Value = elements(1) ' Produit
-        wsSummary.Cells(i, 3).Value = UBound(tabFinal(keyKL), 1) ' Lignes
-        wsSummary.Cells(i, 4).Value = UBound(tabFinal(keyKL), 2) ' Colonnes
-        i = i + 1
-    Next
-    
     ' Afficher le temps d'exécution
+    MsgBox tab_Key2(50)
+    nb_fichier_N2 = listeFichiers.Count
     MsgBox listeFichiers.Count & " fichiers traités en " & Round(Timer - startTime, 2) & " secondes.", vbInformation
 End Sub
 
@@ -347,7 +237,7 @@ Private Sub ParcourirDossier(ByVal dossier As String, ByRef listeFichiers As Col
     
     ' Ajouter les fichiers Excel
     For Each fichierObj In dossierObj.Files
-        If LCase(fso.GetExtensionName(fichierObj.Name)) = "xlsx" Or LCase(fso.GetExtensionName(fichierObj.Name)) = "xls" Then
+        If (LCase(fso.GetExtensionName(fichierObj.Name)) = "xlsx" Or LCase(fso.GetExtensionName(fichierObj.Name)) = "xls") And Not LCase(fichierObj.Name) Like "~$*" Then
             listeFichiers.Add fichierObj.Path
         End If
     Next
@@ -358,37 +248,223 @@ Private Sub ParcourirDossier(ByVal dossier As String, ByRef listeFichiers As Col
     Next
 End Sub
 
-Sub CalculDesDeciles()
-    Dim tab(1 To 5, 1 To 4) As Double
-    Dim temp() As Double
-    Dim i As Long, j As Long, k As Long
-    Dim n As Long
-    Dim D1 As Double, D9 As Double
+'##################################################################'
+'    CONCATENATION DES TRIANGLES DE RACHAT DE N-1 ET DE N-2        '
+'##################################################################'
 
-    ' Remplir le tableau 2D avec des données fictives (valeurs entre 0 et 100)
-    For i = 1 To 5
-        For j = 1 To 4
-            tab(i, j) = Rnd() * 100
-        Next j
-    Next i
+Private Sub Concatener_Click()
 
-    ' Convertir en tableau 1D pour l’analyse
-    n = (UBound(tab, 1) - LBound(tab, 1) + 1) * (UBound(tab, 2) - LBound(tab, 2) + 1)
-    ReDim temp(1 To n)
+Min_Annee = 1984
+Max_Annee = 2023
+nb_an = (Max_Annee - Min_Annee) + 3
 
-    k = 1
-    For i = LBound(tab, 1) To UBound(tab, 1)
-        For j = LBound(tab, 2) To UBound(tab, 2)
-            temp(k) = tab(i, j)
-            k = k + 1
-        Next j
-    Next i
+' concaténation des tableaux
 
-    ' Calcul des déciles
-    D1 = Application.WorksheetFunction.Percentile_Inc(temp, 0.1) ' 1er décile = 10%
-    D9 = Application.WorksheetFunction.Percentile_Inc(temp, 0.9) ' 9e décile = 90%
+For t = 1 To nb_fichier_N1
+      For i = 2 To nb_an - 2
+          For j = 3 To nb_an
+              If tabFinal(tab_Key1(t))(i, j) = "" Then
+              tabFinal(tab_Key1(t))(i, j) = tabFinal2(tab_Key1(t))(i, j)
+              End If
+          Next j
+       Next i
+Next t
 
-    MsgBox "1er décile (D1) : " & Format(D1, "0.00") & vbCrLf & _
-           "9e décile (D9) : " & Format(D9, "0.00")
+
+'##################################################################'
+'    Detection des taux atypiques  Méthode Intervale de Kelly      '
+'##################################################################'
+
+Dim deciles() As Variant
+Dim D1 As Double, D9 As Double
+Dim values() As Double
+Dim valueCount As Long
+Dim t As Long, i As Long, j As Long
+
+ReDim deciles(1 To nb_fichier_N1, 1 To 2) ' Colonne 1 pour D1, Colonne 2 pour D9
+
+For t = 1 To nb_fichier_N1
+    For j = 3 To nb_an
+        valueCount = 0
+        ReDim values(1 To 1000) ' Ajustez la taille selon vos besoins
+
+        ' Collecter les valeurs non vides de la colonne j
+        For i = 2 To nb_an - 2
+            If tabFinal(tab_Key1(t))(i, j) <> "" Then
+                valueCount = valueCount + 1
+                If valueCount > UBound(values) Then
+                    ' Redimensionner le tableau si nécessaire
+                    ReDim Preserve values(1 To valueCount)
+                End If
+                values(valueCount) = tabFinal(tab_Key1(t))(i, j)
+            End If
+        Next i
+
+        ' Calculer D1 et D9 si nous avons des valeurs
+        If valueCount > 0 Then
+            ' Trier les valeurs pour calculer les déciles
+            Call QuickSort(values, 1, valueCount) ' Vous devez définir la fonction QuickSort
+
+            ' Calcul des déciles
+            D1 = Application.WorksheetFunction.Percentile_Inc(Application.Transpose(values), 0.1)
+            D9 = Application.WorksheetFunction.Percentile_Inc(Application.Transpose(values), 0.9)
+
+            ' Stocker les résultats
+            deciles(t, 1) = D1 ' D1
+            deciles(t, 2) = D9 ' D9
+        End If
+    Next j
+Next t
+
+' Vous pouvez maintenant accéder aux déciles pour chaque fichier dans le tableau deciles
+' Par exemple, pour afficher les déciles pour le premier fichier :
+MsgBox "D1: " & deciles(1, 1) & ", D9: " & deciles(1, 2)
+
 End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sub calcule_para_colonne(col, debut, fin, coeff)
+    Dim taux As Double
+    Dim j As Integer
+    j = debut
+    'on ne veut considérer que les données non nulles dans le calcul du quartile --> donc on place ces dernières dans un onglet temporaire pour y appeler la fonction quartile
+    For i = debut To fin
+        taux = Sheets(prod).Cells(i, col).Value
+        If taux > 0 Then
+            Sheets("temp").Cells(j, col) = taux
+            j = j + 1
+        End If
+    Next
+    
+    
+    
+    Set plage = Range(Sheets("temp").Cells(debut, col), Sheets("temp").Cells(j, col))
+    If IsEmpty(plage) = False Then
+    
+        Q1 = WorksheetFunction.Quartile(plage, 1)
+        Q3 = WorksheetFunction.Quartile(plage, 3)
+    
+        Dim min_admissible As Double
+        Dim max_admissible As Double
+        
+        min_admissible = Application.WorksheetFunction.Max(Q1 - coeff * (Q3 - Q1), 0)
+        max_admissible = Q3 + coeff * (Q3 - Q1)
+        
+        Sheets(prod).Cells(fin + 3, col) = min_admissible
+        Sheets(prod).Cells(fin + 4, col) = max_admissible
+    Else: indicateur = "colonne vide"
+    End If
+End Sub
+
+Sub colore_outliers(col, debut, fin)
+    Dim taux As Double
+    Dim min_admissible As Double
+    Dim max_admissible As Double
+    
+    
+    min_admissible = Sheets(prod).Cells(fin + 3, col).Value
+    max_admissible = Sheets(prod).Cells(fin + 4, col).Value
+
+    If indicateur <> "colonne vide" Then
+    
+        For k = debut To fin
+            taux = Sheets(prod).Cells(k, col).Value
+            If taux > 0 Then
+                If taux > max_admissible Or taux < min_admissible Then
+                    Sheets(prod).Cells(k, col).Font.ColorIndex = couleur
+                    compteur_outliers = compteur_outliers + 1
+                End If
+            End If
+        Next
+    End If
+    
+End Sub
+
+Sub macro_detection_nombre()
+Workbooks("détection_taux.xlsm").Sheets("macro_detection_nombre").Activate
+    an_obs = Cells(4, 6).Value
+    res = Cells(5, 6).Value
+    prod = Cells(6, 6).Value
+    coeff = Cells(7, 6).Value
+    chem1 = Cells(12, 6).Value
+    chem2 = Cells(13, 6).Value
+    couleur = 3
+    nb_gen = 39
+    
+    
+    Call importation_valid_nombre(chem1, an_obs)
+    
+    ActiveWorkbook.Sheets.Add.Name = "temp"
+
+    
+    'Idem pour les RT en nombre
+    num_ligne_debut = 164
+    num_ligne_fin = 203
+    Sheets(prod).Cells(num_ligne_fin + 3, 3) = "min admissible"
+    Sheets(prod).Cells(num_ligne_fin + 4, 3) = "max admissible"
+    compteur_outliers = 0
+    
+    For num_col2 = 4 To nb_gen + 3
+        indicateur = ""
+        Call calcule_para_colonne(num_col2, num_ligne_debut, num_ligne_fin, coeff)
+        Call colore_outliers(num_col2, num_ligne_debut, num_ligne_fin)
+    Next
+    
+    Sheets(prod).Cells(num_ligne_fin + 2, 4) = "total outliers : " & compteur_outliers
+    
+    
+    'Copie et sauvegarde des résultats dans un fichier
+    ' Sheets("temp").Delete ------ Maissoro : supprission de la feuille "temp" sans message
+    SupprimerFeuille ("temp")
+    Sheets(prod).Range("A1:AQ215").Copy
+    Set fichier_dest = Workbooks.Add
+    Set feuille_dest = fichier_dest.Sheets.Add
+    feuille_dest.Range("A1:AQ215").PasteSpecial xlPasteAll
+    fichier_dest.SaveAs Filename:=chem2 & "\" & prod & "_" & "nombre" & "_" & coeff & ".xlsx"
+    'ActiveWorkbook.SaveAs Filename:=chem2 & "\" & prod & "_" & coeff & ".xlsm"
+    
+    'Maissoro : Code pour revenir sur ma macro et supprimer la feuille du produit
+     coeffstring = CStr(coeff)
+     Workbooks(prod & "_" & "nombre" & "_" & coeffstring).Close SaveChanges:=False
+     Workbooks("détection_taux.xlsm").Activate
+     SupprimerFeuille (prod)
+     Worksheets("macro_detection_nombre").Activate
+     
+End Sub
+
+
+
 
