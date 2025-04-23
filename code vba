@@ -324,11 +324,147 @@ End Sub
 
 
 
+'##################################################################'
+'    CREATION DES DOSSIERS ET SAUVEGARDE DES FICHIERS CONCATENES   '
+'##################################################################'
+
+Private Sub Concatener_Click()
+    ' Code existant pour la concaténation ...
+    
+    Dim fso As Object
+    Dim dossierBase As String
+    Dim dossierSortie As String
+    Dim dossierReseau As String
+    Dim dossierProduit As String
+    Dim xlApp As Object
+    Dim wb As Object
+    Dim ws As Object
+    Dim t As Long
+    Dim i As Long, j As Long
+    Dim dataIJ As Variant
+    Dim key As String
+    Dim cheminFichier As String
+    
+    ' Initialiser le FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Définir le dossier de base (même répertoire que le dossier d'entrée)
+    dossierBase = dossier ' Suppose que 'dossier' est la variable du dossier sélectionné dans Stat_N1_Click ou STAT_N2_Click
+    dossierSortie = fso.BuildPath(dossierBase, "Fichiers_Concatenes")
+    
+    ' Créer le dossier de sortie s'il n'existe pas
+    If Not fso.FolderExists(dossierSortie) Then
+        fso.CreateFolder dossierSortie
+    End If
+    
+    ' Initialiser Excel
+    Set xlApp = Application
+    
+    ' Parcourir chaque clé dans tabFinal
+    For t = 1 To nb_fichier_N1
+        key = tab_Key1(t)
+        
+        ' Extraire réseau et produit depuis la clé
+        Dim parts() As String
+        parts = Split(key, "_")
+        If UBound(parts) < 1 Then GoTo NextKey
+        Dim reseau As String: reseau = parts(0)
+        Dim produit As String: produit = parts(1)
+        
+        ' Créer le dossier réseau
+        dossierReseau = fso.BuildPath(dossierSortie, reseau)
+        If Not fso.FolderExists(dossierReseau) Then
+            fso.CreateFolder dossierReseau
+        End If
+        
+        ' Créer le dossier produit
+        dossierProduit = fso.BuildPath(dossierReseau, produit)
+        If Not fso.FolderExists(dossierProduit) Then
+            fso.CreateFolder dossierProduit
+        End If
+        
+        ' Créer un nouveau classeur Excel
+        Set wb = xlApp.Workbooks.Add
+        Set ws = wb.Sheets(1)
+        
+        ' Récupérer les données concatenées
+        dataIJ = tabFinal(key)
+        
+        ' Écrire les données dans la feuille
+        For i = LBound(dataIJ, 1) To UBound(dataIJ, 1)
+            For j = LBound(dataIJ, 2) To UBound(dataIJ, 2)
+                ws.Cells(i, j).Value = dataIJ(i, j)
+            Next j
+        Next i
+        
+        ' Définir le chemin du fichier de sortie
+        cheminFichier = fso.BuildPath(dossierProduit, key & ".xlsx")
+        
+        ' Sauvegarder et fermer le classeur
+        wb.SaveAs cheminFichier
+        wb.Close SaveChanges:=False
+        
+NextKey:
+    Next t
+    
+    MsgBox "Fichiers concatenés sauvegardés dans : " & dossierSortie, vbInformation
+End Sub
 
 
 
+Private Sub Concatener_Click()
+    Min_Annee = 1984
+    Max_Annee = 2023
+    nb_an = (Max_Annee - Min_Annee) + 3
 
+    Dim t As Long, i As Long, j As Long
+    Dim key As String
+    Dim rowCount1 As Long, colCount1 As Long
+    Dim rowCount2 As Long, colCount2 As Long
+    Dim data1 As Variant, data2 As Variant
 
+    ' Vérifier que les dictionnaires existent
+    If tabFinal Is Nothing Or tabFinal2 Is Nothing Then
+        MsgBox "Les données des années N-1 ou N-2 ne sont pas chargées.", vbCritical
+        Exit Sub
+    End If
+
+    ' Concaténation des tableaux
+    For t = 1 To nb_fichier_N1
+        key = tab_Key1(t)
+        
+        ' Vérifier si la clé existe dans tabFinal
+        If tabFinal.exists(key) Then
+            ' Extraire le tableau
+            data1 = tabFinal(key)
+            rowCount1 = UBound(data1, 1)
+            colCount1 = UBound(data1, 2)
+            
+            ' Vérifier si la clé existe dans tabFinal2
+            If tabFinal2.exists(key) Then
+                data2 = tabFinal2(key)
+                rowCount2 = UBound(data2, 1)
+                colCount2 = UBound(data2, 2)
+                
+                ' Parcourir les cellules
+                For i = 2 To Application.Min(rowCount1, nb_an - 2)
+                    For j = 3 To Application.Min(colCount1, nb_an)
+                        If i <= rowCount2 And j <= colCount2 Then
+                            If data1(i, j) = "" And data2(i, j) <> "" Then
+                                data1(i, j) = data2(i, j)
+                            End If
+                        End If
+                    Next j
+                Next i
+                
+                ' Mettre à jour tabFinal
+                tabFinal(key) = data1
+            End If ' Si la clé n'existe pas, on conserve data1 tel quel
+        End If
+    Next t
+    
+    MsgBox "Concaténation terminée.", vbInformation
+End Sub
 
 
 
