@@ -558,8 +558,190 @@ Next i
 Next t
 
 
+####################################################################################################
 
 
+
+Private Sub importer_Click()
+    ' Calcul des statistiques récapitulatives des rachats de l'année N-1 et combinaison des feuilles par produit/réseau
+    
+    Dim fso As Object
+    Dim xlApp As Object
+    Dim wb As Object
+    Dim ws As Object
+    Dim dossierBase As String
+    Dim dossierResultat As String
+    Dim dossierReseau As String
+    Dim cheminFichier As String
+    Dim t As Long, i As Long, j As Long, k As Long
+    Dim Recap() As Variant
+    Dim dataIJ As Variant
+    Dim key As String
+    Dim currentRow As Long
+    Dim uniqueReseaux As Object
+    Dim uniqueProduits As Object
+    Dim produit As String
+    Dim reseau As String
+    Dim feuille As String
+    
+    ' Définir les années
+    Min_Annee = 1985
+    Max_Annee = 2023
+    nb_an = (Max_Annee - Min_Annee) + 3
+    
+    ' Vérifier que les données sont chargées
+    If tabFinal Is Nothing Then
+        MsgBox "Les données de l'année N-1 ne sont pas chargées.", vbCritical
+        Exit Sub
+    End If
+    
+    ' Initialiser le FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set xlApp = Application
+    
+    ' Définir le dossier de base et le dossier resultat
+    dossierBase = ThisWorkbook.Path ' Ou utiliser le dossier d'entrée défini précédemment
+    dossierResultat = fso.BuildPath(dossierBase, "resultat")
+    If Not fso.FolderExists(dossierResultat) Then
+        fso.CreateFolder dossierResultat
+    End If
+    
+    ' Créer un dictionnaire pour les réseaux et produits uniques
+    Set uniqueReseaux = CreateObject("Scripting.Dictionary")
+    Set uniqueProduits = CreateObject("Scripting.Dictionary")
+    
+    ' Identifier les réseaux et produits uniques
+    For t = 1 To nb_fichier_N1
+        reseau = nom_reseau(t)
+        produit = nom_produit(t)
+        If Not uniqueReseaux.Exists(reseau) Then
+            uniqueReseaux.Add reseau, CreateObject("Scripting.Dictionary")
+        End If
+        If Not uniqueReseaux(reseau).Exists(produit) Then
+            uniqueReseaux(reseau).Add produit, True
+        End If
+    Next t
+    
+    ' Parcourir chaque réseau
+    For Each reseau In uniqueReseaux.Keys
+        ' Créer un nouveau classeur pour le réseau
+        Set wb = xlApp.Workbooks.Add
+        Set ws = wb.Sheets(1)
+        ws.Name = "Temp" ' Feuille temporaire pour éviter les erreurs
+        
+        ' Parcourir chaque produit du réseau
+        For Each produit In uniqueReseaux(reseau).Keys
+            ' Créer une nouvelle feuille pour le produit
+            Set ws = wb.Sheets.Add(After:=wb.Sheets(wb.Sheets.Count))
+            ws.Name = produit
+            currentRow = 1
+            
+            ' Initialiser le tableau Recap pour ce produit
+            ReDim Recap(1 To nb_an, 1 To 9)
+            Recap(1, 1) = "génération"
+            Recap(1, 2) = "nb_contrats"
+            Recap(1, 3) = "PM_ouv"
+            Recap(1, 4) = "Tx de RP (en nbr)"
+            Recap(1, 5) = "Tx de RP (en mt)"
+            Recap(1, 6) = "RP"
+            Recap(1, 7) = "Tx de RT (en nbr)"
+            Recap(1, 8) = "Tx de RT (en mt)"
+            Recap(1, 9) = "RT"
+            
+            For i = 2 To nb_an
+                Recap(i, 1) = Min_Annee + i - 2
+            Next i
+            
+            ' Parcourir toutes les feuilles associées à ce produit
+            For t = 1 To nb_fichier_N1
+                If nom_reseau(t) = reseau And nom_produit(t) = produit Then
+                    key = tab_Key1(t)
+                    feuille = nom_Feuille(t)
+                    
+                    ' Écrire le nom de la feuille comme titre
+                    ws.Cells(currentRow, 1).Value = feuille
+                    currentRow = currentRow + 1
+                    
+                    ' Récupérer les données
+                    dataIJ = tabFinal(key)
+                    
+                    ' Écrire les données dans la feuille
+                    For i = LBound(dataIJ, 1) To UBound(dataIJ, 1)
+                        For j = LBound(dataIJ, 2) To UBound(dataIJ, 2)
+                            ws.Cells(currentRow + i - 1, j).Value = dataIJ(i, j)
+                        Next j
+                    Next i
+                    
+                    ' Mettre à jour Recap pour ce produit
+                    If InStr(key, "PMOUV_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 2) = dataIJ(i, 2) ' nb_contrats
+                            Recap(i, 3) = dataIJ(i, nb_an - 1) ' PM_ouv
+                        Next i
+                    ElseIf InStr(key, "TX_RP_NB_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 4) = dataIJ(i, nb_an - 1) ' Tx de RP (en nbr)
+                        Next i
+                    ElseIf InStr(key, "TX_RP_MT_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 5) = dataIJ(i, nb_an - 1) ' Tx de RP (en mt)
+                        Next i
+                    ElseIf InStr(key, "RP_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 6) = dataIJ(i, nb_an - 1) ' RP
+                        Next i
+                    ElseIf InStr(key, "TX_RT_NB_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 7) = dataIJ(i, nb_an - 1) ' Tx de RT (en nbr)
+                        Next i
+                    ElseIf InStr(key, "TX_RT_MT_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 8) = dataIJ(i, nb_an - 1) ' Tx de RT (en mt)
+                        Next i
+                    ElseIf InStr(key, "RT_POL") > 0 Then
+                        For i = 2 To nb_an - 1
+                            Recap(i, 9) = dataIJ(i, nb_an - 1) ' RT
+                        Next i
+                    End If
+                    
+                    ' Ajouter 2 lignes d'espace
+                    currentRow = currentRow + UBound(dataIJ, 1) + 2
+                End If
+            Next t
+            
+            ' Ajouter le tableau Recap à la fin de la feuille
+            ws.Cells(currentRow, 1).Value = "Récapitulatif"
+            currentRow = currentRow + 1
+            For i = LBound(Recap, 1) To UBound(Recap, 1)
+                For j = LBound(Recap, 2) To UBound(Recap, 2)
+                    ws.Cells(currentRow + i - 1, j).Value = Recap(i, j)
+                Next j
+            Next i
+        Next produit
+        
+        ' Supprimer la feuille temporaire
+        Application.DisplayAlerts = False
+        wb.Sheets("Temp").Delete
+        Application.DisplayAlerts = True
+        
+        ' Sauvegarder le classeur
+        cheminFichier = fso.BuildPath(dossierResultat, reseau & ".xlsx")
+        wb.SaveAs cheminFichier
+        wb.Close Save­
+
+Changes:=False
+    Next reseau
+    
+    MsgBox "Traitement terminé. Les classeurs sont sauvegardés dans : " & dossierResultat, vbInformation
+End Sub
+
+
+
+
+
+
+
+########################################################
 
 
 End Sub
