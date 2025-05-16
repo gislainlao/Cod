@@ -745,3 +745,70 @@ End Sub
 
 
 End Sub
+
+
+
+
+
+
+Sub CreerGraphiqueRachats_Horizontaux()
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("Feuil1") ' Changez si nécessaire
+
+    Dim chartObj As ChartObject
+    Set chartObj = ws.ChartObjects.Add(Left:=100, Width:=700, Top:=50, Height:=400)
+    
+    Dim chart As Chart
+    Set chart = chartObj.Chart
+
+    With chart
+        .ChartType = xlColumnClustered
+        
+        ' Série PM (barres)
+        .SeriesCollection.NewSeries
+        .SeriesCollection(1).Values = ws.Range("A2:AN2") ' PM = ligne 2
+        .SeriesCollection(1).XValues = ws.Range("A1:AN1") ' Années
+        .SeriesCollection(1).Name = "PM"
+        
+        ' Modélisation 2023
+        .SeriesCollection.NewSeries
+        .SeriesCollection(2).Values = ws.Range("A3:AN3")
+        .SeriesCollection(2).XValues = ws.Range("A1:AN1")
+        .SeriesCollection(2).Name = "Modélisation dans l'EEV 2023"
+        .SeriesCollection(2).ChartType = xlLine
+        .SeriesCollection(2).Format.Line.ForeColor.RGB = RGB(0, 0, 139)
+
+        ' Stats 2023
+        .SeriesCollection.NewSeries
+        .SeriesCollection(3).Values = ws.Range("A4:AN4")
+        .SeriesCollection(3).XValues = ws.Range("A1:AN1")
+        .SeriesCollection(3).Name = "Stats 2023"
+        .SeriesCollection(3).ChartType = xlLine
+        .SeriesCollection(3).Format.Line.ForeColor.RGB = RGB(255, 0, 255)
+
+        ' Stats 2022
+        .SeriesCollection.NewSeries
+        .SeriesCollection(4).Values = ws.Range("A5:AN5")
+        .SeriesCollection(4).XValues = ws.Range("A1:AN1")
+        .SeriesCollection(4).Name = "Stats 2022"
+        .SeriesCollection(4).ChartType = xlLine
+        .SeriesCollection(4).Format.Line.ForeColor.RGB = RGB(255, 255, 0)
+
+        ' Titre et axes
+        .HasTitle = True
+        .ChartTitle.Text = "Rachats Partiels en montant"
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "Année police"
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "Taux de rachat"
+
+        ' Arrière-plan gris
+        .PlotArea.Format.Fill.ForeColor.RGB = RGB(169, 169, 169)
+
+        ' Légende
+        .Legend.Position = xlLegendPositionTop
+    End With
+
+End Sub
+
