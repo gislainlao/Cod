@@ -751,13 +751,13 @@ End Sub
 
 
 
-Sub CreerGraphiqueRachats_Horizontaux()
+Sub CreerGraphiqueRachatsAvecAxesCorrects()
 
     Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets("Feuil1") ' Changez si nécessaire
+    Set ws = ThisWorkbook.Sheets("Feuil1") ' Changez le nom de la feuille si nécessaire
 
     Dim chartObj As ChartObject
-    Set chartObj = ws.ChartObjects.Add(Left:=100, Width:=700, Top:=50, Height:=400)
+    Set chartObj = ws.ChartObjects.Add(Left:=100, Width:=800, Top:=50, Height:=450)
     
     Dim chart As Chart
     Set chart = chartObj.Chart
@@ -765,35 +765,49 @@ Sub CreerGraphiqueRachats_Horizontaux()
     With chart
         .ChartType = xlColumnClustered
         
-        ' Série PM (barres)
+        ' PM (axe secondaire)
         .SeriesCollection.NewSeries
-        .SeriesCollection(1).Values = ws.Range("A2:AN2") ' PM = ligne 2
-        .SeriesCollection(1).XValues = ws.Range("A1:AN1") ' Années
-        .SeriesCollection(1).Name = "PM"
-        
+        With .SeriesCollection(1)
+            .Values = ws.Range("A2:AN2") ' Ligne 2 : PM
+            .XValues = ws.Range("A1:AN1") ' Ligne 1 : années
+            .Name = "PM"
+            .AxisGroup = xlSecondary
+            .ChartType = xlColumnClustered
+            .Format.Fill.ForeColor.RGB = RGB(0, 100, 0)
+        End With
+
         ' Modélisation 2023
         .SeriesCollection.NewSeries
-        .SeriesCollection(2).Values = ws.Range("A3:AN3")
-        .SeriesCollection(2).XValues = ws.Range("A1:AN1")
-        .SeriesCollection(2).Name = "Modélisation dans l'EEV 2023"
-        .SeriesCollection(2).ChartType = xlLine
-        .SeriesCollection(2).Format.Line.ForeColor.RGB = RGB(0, 0, 139)
+        With .SeriesCollection(2)
+            .Values = ws.Range("A3:AN3")
+            .XValues = ws.Range("A1:AN1")
+            .Name = "Modélisation dans l'EEV 2023"
+            .ChartType = xlLine
+            .AxisGroup = xlPrimary
+            .Format.Line.ForeColor.RGB = RGB(0, 0, 139)
+        End With
 
         ' Stats 2023
         .SeriesCollection.NewSeries
-        .SeriesCollection(3).Values = ws.Range("A4:AN4")
-        .SeriesCollection(3).XValues = ws.Range("A1:AN1")
-        .SeriesCollection(3).Name = "Stats 2023"
-        .SeriesCollection(3).ChartType = xlLine
-        .SeriesCollection(3).Format.Line.ForeColor.RGB = RGB(255, 0, 255)
+        With .SeriesCollection(3)
+            .Values = ws.Range("A4:AN4")
+            .XValues = ws.Range("A1:AN1")
+            .Name = "Stats 2023"
+            .ChartType = xlLine
+            .AxisGroup = xlPrimary
+            .Format.Line.ForeColor.RGB = RGB(255, 0, 255)
+        End With
 
         ' Stats 2022
         .SeriesCollection.NewSeries
-        .SeriesCollection(4).Values = ws.Range("A5:AN5")
-        .SeriesCollection(4).XValues = ws.Range("A1:AN1")
-        .SeriesCollection(4).Name = "Stats 2022"
-        .SeriesCollection(4).ChartType = xlLine
-        .SeriesCollection(4).Format.Line.ForeColor.RGB = RGB(255, 255, 0)
+        With .SeriesCollection(4)
+            .Values = ws.Range("A5:AN5")
+            .XValues = ws.Range("A1:AN1")
+            .Name = "Stats 2022"
+            .ChartType = xlLine
+            .AxisGroup = xlPrimary
+            .Format.Line.ForeColor.RGB = RGB(255, 255, 0)
+        End With
 
         ' Titre et axes
         .HasTitle = True
@@ -802,13 +816,19 @@ Sub CreerGraphiqueRachats_Horizontaux()
         .Axes(xlCategory).AxisTitle.Text = "Année police"
         .Axes(xlValue).HasTitle = True
         .Axes(xlValue).AxisTitle.Text = "Taux de rachat"
+        .Axes(xlValue).MaximumScale = 15 ' Échelle fixe pour le taux de rachat
+        .Axes(xlValue).MinimumScale = 0
 
-        ' Arrière-plan gris
-        .PlotArea.Format.Fill.ForeColor.RGB = RGB(169, 169, 169)
+        .Axes(xlValue, xlSecondary).HasTitle = True
+        .Axes(xlValue, xlSecondary).AxisTitle.Text = "Montant PM"
+        .Axes(xlValue, xlSecondary).MaximumScale = 100000000 ' Ajustez selon vos données
+        .Axes(xlValue, xlSecondary).MinimumScale = 0
+
+        ' Couleur de fond
+        .PlotArea.Format.Fill.ForeColor.RGB = RGB(200, 200, 200)
 
         ' Légende
         .Legend.Position = xlLegendPositionTop
     End With
 
 End Sub
-
