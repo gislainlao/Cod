@@ -187,3 +187,196 @@ from caas_jupyter_tools import display_dataframe_to_user
 display_dataframe_to_user("Projection contrainte décroissante 1..60 (avec IC95)", out.head(15))
 
 (out_path.as_posix(), k_star, (float(c_hat), float(r_hat)))
+
+
+
+# Re-exécution complète (le kernel a été réinitialisé).
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+from scipy.optimize import curve_fit
+from scipy.interpolate import UnivariateSpline
+
+# Chargement des données
+csv_path = Path("/mnt/data/loi_rachats_1_30.csv")
+if csv_path.exists():
+    df_in = pd.read_csv(csv_path)
+    df_in.columns = [c.strip().lower() for c in df_in.columns]
+    if "anciennete" not in df_in.columns or "taux" not in df_in.columns:
+        raise ValueError("Le CSV doit contenir les colonnes 'anciennete' et 'taux'.")
+    x = df_in["anciennete"].values.astype(float)
+    y = df_in["taux"].values.astype(float)
+    if y.max() > 1.0:
+        y = y / 100.0
+else:
+    x = np.arange(1, 31, dtype=float)
+    rng = np.random.default_rng(42)
+    y_true = 0.01 + 0.004*x*np.exp(-x/12)
+    y = np.clip(y_true + rng.normal(scale=0.0015, size=len(x)), 0, None)
+
+x_proj = np.arange(1, 61, dtype=float)
+
+# Spline lisse pour estimer k*
+spl_smooth = UnivariateSpline(x, y, s=len(x)*0.01, k=3)
+x_dense = np.linspace(1, 30, 600)
+y_dense = spl_smooth(x_dense)
+k_star = int(np.clip(np.round(x_dense[np.argmax(y_dense)]), 2, 28))
+
+# PAVA décroissant (implémentation simple)
+def pava_inc(z):
+    z = np.asarray(z, dtype=float)
+    n = len(z)
+    g = z.copy()
+    w = np.ones(n)
+    i = 0
+    while i < n-1:
+        if g[i] > g[i+1]:
+            j = i
+            while j >= 0 and g[j] > g[j+1]:
+                new_w = w[j] + w[j+1]
+                new_g = (w[j]*g[j] + w[j+1]*g[j+1]) / new_w
+                g[j] = new_g
+                w[j] = new_w
+                g = np.delete(g, j+1)
+                w = np.delete(w, j+1)
+                n -= 1
+                j -= 1
+            i = max(j, 0)
+        else:
+            i += 1
+    out = []
+    for val, rep in zip(g, w.astype(int)):
+        out += [val]*rep
+    out = np.interp(np.linspace(0, len(out)-1, num=len(z)), np.arange(len(out)), out)
+    return out
+
+def pava_decreasing(y_vals):
+    return -np.array(pava_inc(-np.asarray(y_vals, dtype=float)))
+
+mask_tail = x >= k_star
+y_iso_tail = pava_decreasing(y[mask_tail])
+y_monotone_obs = np.concatenate([spl_smooth(x[x < k_star]), y_iso_tail])
+
+# Queue exponentielle décroissante vers un plancher
+x0 = 30.0
+y30 = float(y_monotone_obs[-1])
+
+def tail_exp(xv, c, r):
+    return c + (y30 - c) * np.exp(-r * (xv - x0))
+
+x_tail_fit = x[mask_tail][-8:] if np.sum(mask_tail) >= 8 else x[mask_tail]
+y_tail_fit = y_iso_tail[-len(x_tail_fit):]
+
+c0 = max(0.0, float(np.min(y_tail_fit))*0.9)
+r0 = 0.1
+popt_tail, _ = curve_fit(
+    lambda xv, c, r: tail_exp(xv, c, r),
+    x_tail_fit, y_tail_fit,
+    p0=[c0, r0],
+    bounds=([0.0, 1e-6], [y30, 5.0]),
+    maxfev=20000
+)
+c_hat, r_hat = float(popt_tail[0]), float(popt_tail[1])
+
+# Construction de la trajectoire 1..60
+x_proj_pre  = x_proj[x_proj < k_star]
+x_proj_mid  = x_proj[(x_proj >= k_star) & (x_proj <= 30)]
+x_proj_tail = x_proj[x_proj > 30]
+
+y_pre  = spl_smooth(x_proj_pre)
+y_mid  = np.interp(x_proj_mid, x[mask_tail], y_iso_tail)
+y_tail = tail_exp(x_proj_tail, c_hat, r_hat)
+
+y_constrained = np.concatenate([y_pre, y_mid, y_tail])
+y_constrained = np.clip(y_constrained, 0.0, 1.0)
+
+# Log-normale pour comparaison
+def lognorm_bell(xv, A, mu, sigma, c):
+    xv = np.asarray(xv, dtype=float)
+    return c + A * np.exp(-((np.log(xv) - mu) ** 2) / (2.0 * sigma ** 2))
+
+A0 = max(1e-6, (y.max() - y.min()))
+mu0 = np.log(x[np.argmax(y)]) if np.all(x>0) else 2.5
+sigma0 = 0.8
+c0 = max(0.0, float(np.percentile(y, 10)))
+p0_logn = [A0, mu0, sigma0, c0]
+bounds_logn = ([0.0, -5.0, 1e-3, 0.0], [1.0, 6.0, 5.0, 1.0])
+popt_logn, _ = curve_fit(lognorm_bell, x, y, p0=p0_logn, bounds=bounds_logn, maxfev=20000)
+y_logn = lognorm_bell(x_proj, *popt_logn)
+y_logn = np.clip(y_logn, 0.0, 1.0)
+
+# Bootstrap IC95 pour la trajectoire contrainte
+rng = np.random.default_rng(7)
+B = 300
+y_boot_stack = []
+
+y_fit_base = spl_smooth(x)
+resid = y - y_fit_base
+resid = resid - resid.mean()
+
+for b in range(B):
+    y_b = y_fit_base + rng.choice(resid, size=len(resid), replace=True)
+    y_b_tail = pava_decreasing(y_b[mask_tail])
+    y_b_mid  = np.interp(x_proj_mid, x[mask_tail], y_b_tail)
+    y_b_tail_fit = y_b_tail[-len(x_tail_fit):]
+    try:
+        popt_b, _ = curve_fit(lambda xv, c, r: tail_exp(xv, c, r),
+                              x_tail_fit, y_b_tail_fit,
+                              p0=[c_hat, r_hat],
+                              bounds=([0.0, 1e-6], [y_b_tail[-1], 5.0]),
+                              maxfev=20000)
+        c_b, r_b = float(popt_b[0]), float(popt_b[1])
+    except Exception:
+        c_b, r_b = c_hat, r_hat
+    y_b_pre  = spl_smooth(x_proj_pre)
+    y_b_tail_proj = tail_exp(x_proj_tail, c_b, r_b)
+    y_b_curve = np.concatenate([y_b_pre, y_b_mid, y_b_tail_proj])
+    y_boot_stack.append(np.clip(y_b_curve, 0.0, 1.0))
+
+y_boot = np.vstack(y_boot_stack)
+low95 = np.percentile(y_boot, 2.5, axis=0)
+hi95  = np.percentile(y_boot, 97.5, axis=0)
+
+# Exports
+out = pd.DataFrame({
+    "anciennete": x_proj.astype(int),
+    "taux_contrainte_decroissante": y_constrained,
+    "ic95_low": low95,
+    "ic95_high": hi95,
+    "taux_bell_lognorm": y_logn
+})
+out_path = Path("/mnt/data/projection_decroissante_1_60.csv")
+out.to_csv(out_path, index=False)
+
+# Graphique 1
+plt.figure()
+plt.scatter(x, y, label="Observé (1..30)")
+plt.plot(x_proj, y_constrained, label="Projection contrainte décroissante")
+plt.fill_between(x_proj, low95, hi95, alpha=0.2, label="IC 95% (bootstrap)")
+plt.axvline(k_star, linestyle="--", label=f"k* (pic) ≈ {k_star}")
+plt.title("Loi de rachat – Projection contrainte décroissante jusqu'à 60 ans")
+plt.xlabel("Ancienneté (années)")
+plt.ylabel("Taux de rachat (proportion)")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# Graphique 2
+plt.figure()
+plt.scatter(x, y, label="Observé (1..30)")
+plt.plot(x_proj, y_logn, label="En cloche (log-normale)")
+plt.plot(x_proj, y_constrained, label="Contrainte décroissante (hybride)")
+plt.title("Comparaison: log-normale vs trajectoire contrainte")
+plt.xlabel("Ancienneté (années)")
+plt.ylabel("Taux de rachat (proportion)")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+from caas_jupyter_tools import display_dataframe_to_user
+display_dataframe_to_user("Projection contrainte décroissante 1..60 (avec IC95)", out.head(15))
+
+(out_path.as_posix(), k_star, (float(c_hat), float(r_hat)))
+
