@@ -397,3 +397,17 @@ plt.title("Projection + borne basse IC95")
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.show()
+
+
+
+
+plt.figure(figsize=(8,5))
+plt.scatter(x, y, color="blue", label="Observations", alpha=0.6)
+plt.plot(x_proj, y_constrained, color="red", label="Projection contrainte (modèle)", linewidth=2)
+plt.plot(x_proj, mean_bootstrap, color="purple", linestyle="-", label="Projection moyenne bootstrap", linewidth=2)
+plt.xlabel("Âge / Ancienneté")
+plt.ylabel("Taux de rachat")
+plt.title("Projection centrale (moyenne bootstrap)")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
