@@ -380,3 +380,20 @@ display_dataframe_to_user("Projection contrainte décroissante 1..60 (avec IC95)
 
 (out_path.as_posix(), k_star, (float(c_hat), float(r_hat)))
 
+
+
+
+
+
+
+# Tracé du low95
+plt.figure(figsize=(8,5))
+plt.scatter(x, y, color="blue", label="Observations", alpha=0.6)
+plt.plot(x_proj, y_constrained, color="red", label="Projection contrainte", linewidth=2)
+plt.plot(x_proj, low95, color="green", linestyle="--", label="Low95 (IC inf.)", linewidth=2)
+plt.xlabel("Âge / Ancienneté")
+plt.ylabel("Taux de rachat")
+plt.title("Projection + borne basse IC95")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
